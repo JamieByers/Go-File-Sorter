@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+    sortDesktop()
     sortDownloads()
 }
 
@@ -16,7 +17,10 @@ func sortDesktop() {
 }
 
 func getDesktop() (string, []os.DirEntry) {
-    home_dir, _ := os.UserHomeDir()
+    home_dir, err := os.UserHomeDir()
+    if err != nil {
+        log.Panic("UserHomeDir Error: ", err)
+    }
     home_dir = home_dir + "/Desktop/"
 
     files, err := os.ReadDir(home_dir)
@@ -29,7 +33,10 @@ func getDesktop() (string, []os.DirEntry) {
 }
 
 func getDownloads() (string, []os.DirEntry) {
-    home_dir, _ := os.UserHomeDir()
+    home_dir, err := os.UserHomeDir()
+    if err != nil {
+        log.Panic("UserHomeDir Error: ", err)
+    }
     home_dir = home_dir + "/Downloads/"
 
     files, err := os.ReadDir(home_dir)
@@ -62,8 +69,15 @@ func createFolderCWD(folder string) bool {
 
 
 func checkFolderExists(folder string) bool {
-    wd, _ := os.Getwd()
-    files, _ := os.ReadDir(wd)
+    wd, err := os.Getwd()
+    if err != nil {
+        log.Panic("Getwd error: ", err)
+    }
+
+    files, err := os.ReadDir(wd)
+    if err != nil {
+        log.Panic("Read dir error: ", err)
+    }
 
     for _, file := range files {
         if strings.ToLower(file.Name()) == folder && file.IsDir() {
@@ -85,8 +99,12 @@ func sortScreenshots() {
     dir, files := getDesktop()
 
     for _, file := range files {
-        if strings.Contains(strings.ToLower(file.Name()), "screenshot") {
-            os.Rename(dir + file.Name(), dir + "Screenshots/" + file.Name())
+        if strings.Contains(strings.ToLower(file.Name()), "screenshot") && !file.IsDir() {
+            err := os.Rename(dir + file.Name(), dir + "Screenshots/" + file.Name())
+            if err != nil {
+                log.Panic("Rename err: ", err)
+            }
+
             log.Println("Moved ", file, "to /screenshots/")
         }
     }
@@ -97,61 +115,104 @@ func sortLua() {
     dir, files := getDesktop()
     misc_dir := dir + "/Misc/"
 
-    os.Chdir(misc_dir)
+    err := os.Chdir(misc_dir)
+    if err != nil {
+        log.Panic("Chdir err: ", err)
+    }
 
     if !checkFolderExists("Lua") {
         createFolderCWD("Lua")
     }
 
     for _, file := range files {
-        wd, _ := os.Getwd()
+        wd, err := os.Getwd()
+        if err != nil {
+            log.Panic("Getwd error: ", err)
+        }
+
         filepath := wd + "/" + file.Name()
 
         if strings.Contains(filepath, ".lua") {
-            os.Rename(filepath, wd+"/Misc/Lua/"+file.Name())
-            log.Println(filepath)
-            log.Println(strings.Contains(filepath, ".lua"))
+            err := os.Rename(filepath, wd+"/Misc/Lua/"+file.Name())
+            if err != nil {
+                log.Panic("Rename err: ", err)
+            }
         }
     }
 
 }
 
-func fileTypesHasType(arr []string, item string) bool {
+func contains(arr []string, item string) bool {
     for _, el := range arr {
         if el == item {
             return true
         }
     }
-
     return false
 }
 
-func sortDownloads() {
-    dir, files := getDownloads()
-
-    os.Chdir(dir)
-
-    var filepaths []string
-    var fileTypes []string
-
+func getFileTypes(files []os.DirEntry) map[string][]string {
+    fileTypes := make(map[string][]string)
     for _, file := range files {
-        if !strings.HasPrefix(file.Name(), ".") {
-            filepath := dir + file.Name()
-            filepaths = append(filepaths, filepath)
+        if !strings.HasPrefix(file.Name(), ".") && !file.IsDir() {
+            // filepath := dir + file.Name()
 
             splitFileInfo := strings.Split(file.Name(), ".")
             fileType := splitFileInfo[len(splitFileInfo)-1]
 
-            if !fileTypesHasType(fileTypes, fileType) && !file.IsDir() {
-                fileTypes = append(fileTypes, fileType)
-            }
+            fileTypes[fileType] = append(fileTypes[fileType], file.Name())
 
-            log.Println(file.Name(), fileType)
-            log.Println("filetypes: ", fileTypes)
         }
     }
 
-    log.Println(filepaths)
+    return fileTypes
+}
+
+
+func sortDownloads() {
+    dir, files := getDownloads()
+
+    err := os.Chdir(dir)
+    if err != nil {
+        log.Panic("Chdir err: ", err)
+    }
+
+    fileTypes := getFileTypes(files)
+
+    manualTypes := []string{"png", "jpg", "jpeg", "html", "zip", "pdf", "csv", "docx", "app"}
+    var misc []string
+
+    for key, values := range fileTypes {
+        if contains(manualTypes, key) {
+            ifNotCreate(key)
+
+            folderDir := dir + key + "/"
+            for _, value := range values {
+                oldPath := dir + value
+                newPath := folderDir + value
+
+                err := os.Rename(oldPath, newPath)
+                if err != nil {
+                    log.Panic("Rename err: ", err)
+                }
+            }
+
+
+        } else {
+            misc = append(misc, values...)
+        }
+    }
+
+    ifNotCreate("Misc")
+
+    for _, value := range misc {
+        oldPath := dir + value
+        newPath := dir + "Misc/" + value
+        err := os.Rename(oldPath, newPath)
+        if err != nil {
+            log.Panic("Rename err: ", err)
+        }
+    }
 
 }
 
