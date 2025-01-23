@@ -4,6 +4,7 @@ import (
     "log"
     "os"
     "strings"
+    "net/smtp"
 )
 
 func main() {
@@ -19,13 +20,13 @@ func sortDesktop() {
 func getDesktop() (string, []os.DirEntry) {
     home_dir, err := os.UserHomeDir()
     if err != nil {
-        log.Panic("UserHomeDir Error: ", err)
+        emailError(err)
     }
     home_dir = home_dir + "/Desktop/"
 
     files, err := os.ReadDir(home_dir)
     if err != nil {
-        log.Fatal("error")
+        emailError(err)
     }
 
     return home_dir, files
@@ -35,13 +36,13 @@ func getDesktop() (string, []os.DirEntry) {
 func getDownloads() (string, []os.DirEntry) {
     home_dir, err := os.UserHomeDir()
     if err != nil {
-        log.Panic("UserHomeDir Error: ", err)
+        emailError(err)
     }
     home_dir = home_dir + "/Downloads/"
 
     files, err := os.ReadDir(home_dir)
     if err != nil {
-        log.Fatal("error")
+        emailError(err)
     }
 
     return home_dir, files
@@ -61,7 +62,7 @@ func createFolder(folder string, dir string) bool {
 func createFolderCWD(folder string) bool {
     wd, err := os.Getwd()
     if err != nil {
-        log.Panic(err)
+        emailError(err)
     }
 
     return createFolder(folder, wd)
@@ -71,12 +72,12 @@ func createFolderCWD(folder string) bool {
 func checkFolderExists(folder string) bool {
     wd, err := os.Getwd()
     if err != nil {
-        log.Panic("Getwd error: ", err)
+        emailError(err)
     }
 
     files, err := os.ReadDir(wd)
     if err != nil {
-        log.Panic("Read dir error: ", err)
+        emailError(err)
     }
 
     for _, file := range files {
@@ -102,10 +103,9 @@ func sortScreenshots() {
         if strings.Contains(strings.ToLower(file.Name()), "screenshot") && !file.IsDir() {
             err := os.Rename(dir + file.Name(), dir + "Screenshots/" + file.Name())
             if err != nil {
-                log.Panic("Rename err: ", err)
+                emailError(err)
             }
-
-            log.Println("Moved ", file, "to /screenshots/")
+            log.Println("Moved " + file.Name() + " to /Screenshots/")
         }
     }
 
@@ -117,7 +117,7 @@ func sortLua() {
 
     err := os.Chdir(misc_dir)
     if err != nil {
-        log.Panic("Chdir err: ", err)
+        emailError(err)
     }
 
     if !checkFolderExists("Lua") {
@@ -127,7 +127,7 @@ func sortLua() {
     for _, file := range files {
         wd, err := os.Getwd()
         if err != nil {
-            log.Panic("Getwd error: ", err)
+            emailError(err)
         }
 
         filepath := wd + "/" + file.Name()
@@ -135,7 +135,7 @@ func sortLua() {
         if strings.Contains(filepath, ".lua") {
             err := os.Rename(filepath, wd+"/Misc/Lua/"+file.Name())
             if err != nil {
-                log.Panic("Rename err: ", err)
+                emailError(err)
             }
         }
     }
@@ -174,7 +174,7 @@ func sortDownloads() {
 
     err := os.Chdir(dir)
     if err != nil {
-        log.Panic("Chdir err: ", err)
+        emailError(err)
     }
 
     fileTypes := getFileTypes(files)
@@ -193,8 +193,9 @@ func sortDownloads() {
 
                 err := os.Rename(oldPath, newPath)
                 if err != nil {
-                    log.Panic("Rename err: ", err)
+                    emailError(err)
                 }
+                log.Println("Moved " + oldPath + " to " + newPath)
             }
 
 
@@ -210,18 +211,39 @@ func sortDownloads() {
         newPath := dir + "Misc/" + value
         err := os.Rename(oldPath, newPath)
         if err != nil {
-            log.Panic("Rename err: ", err)
+            emailError(err)
         }
+        log.Println("Moved " + oldPath + " to " + newPath)
     }
 
 }
 
 
+func emailError(err error) {
+    sender := ""
+    password := ""
+    smtpHost := "smtp.gmail.com"
+    smtpPort := "587"
+    recipient := ""
+
+    subject := "There is an error with your Go Macos Sorter"
+    body := "The error occuring: " + err.Error()
+
+    message := []byte("Subject: " + subject + "\r\n" +
+    "From: " + sender + "\r\n" +
+    "To: " + recipient + "\r\n" +
+    "\r\n" +
+    body + "\r\n")
 
 
+    auth := smtp.PlainAuth("", sender, password, smtpHost)
 
+    e := smtp.SendMail(smtpHost+":"+smtpPort, auth, sender, []string{recipient}, message)
 
+	if e != nil {
+        log.Panic(e)
+	}
 
-
-
+	log.Println("Email sent successfully!")
+}
 
