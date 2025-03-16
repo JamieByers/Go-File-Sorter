@@ -1,0 +1,32 @@
+{
+    "folder_dir": "default",
+    "folder_types": ["*"],
+
+    "desktop": {
+        "folder_types": [],
+        "exclude_types": [],
+        "exclude_names": [".DS_Store"],
+        "sort_screenshots": true,
+        "misc": {
+            "allow_misc": true,
+            "move_all_to_misc": true,
+            "exclude_names_from_misc": ["Screenshots"],
+            "exclude_types_from_misc": []
+        }
+    },
+
+    "downloads": {
+        "allow_misc": true,
+        "folder_types": [],
+        "exclude_types": [],
+        "exclude_names": []
+    },
+
+    "crontab_settings": {
+        "minute": "0",
+        "hour": "18",
+        "month_day": "*",
+        "month": "*",
+        "day_week": "*"
+    }
+}
