@@ -1,7 +1,0 @@
-// * - Every minute/hour/day etc
-"minute": "0", // 0-59 (minute of the hour to be ran: at the start of the hour by default)
-"hour": "18", // 0-23 (hour of the day to be ran: 6pm by default)
-"month_day": "*", // 1-31 (day of the month to be ran: every day of the month by default)
-"month": "*", // 1-12 (day of the month to be ran: every month by default)
-"day_week": "*", // 0-7 (day of the week to be ran: every day of the week by default)
-

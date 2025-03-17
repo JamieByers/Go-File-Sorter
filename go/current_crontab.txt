@@ -1,1 +1,0 @@
-0 12 * * * ~/Documents/Code/Projects/go-file-sorter/go-file-sorter
