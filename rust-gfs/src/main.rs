@@ -47,7 +47,7 @@ fn help() {
 fn get_exe_path() -> String {
     let binding = env::current_dir().expect("Could not get current directory");
     let cwd = binding.to_str().unwrap();
-    let exe = "go-file-sorter";
+    let exe = "go-logic";
 
     format!("{}/{}", cwd, exe)
 }
@@ -64,15 +64,21 @@ fn home_path() -> String {
 
 fn run() {
     let home_path = home_path();
-    let exe = "/go/go-file-sorter";
-    let exe_path = home_path + exe;
+    let exe_folder = "/go-logic";
+    // let exe = "/go-logic";
+    let exe_path = home_path + exe_folder;
 
-    let run_exe_command = Command::new(format!("{}", exe_path))
+    env::set_current_dir(exe_path.clone()).unwrap();
+    println!("PATH {:?}", env::current_dir().unwrap());
+
+
+    let run_exe_command = Command::new("./go-logic")
         .output()
         .unwrap();
 
-    let run_exe_command_output_string = String::from_utf8_lossy(&run_exe_command.stdout);
-    println!("Output: \n {}", run_exe_command_output_string)
+    println!("{:?}", run_exe_command);
+    let run_exe_command_output_string = String::from_utf8_lossy(&run_exe_command.stderr);
+    println!("Output: \n{}", run_exe_command_output_string)
 }
 
 fn update() {
@@ -144,13 +150,13 @@ fn remove_individual_crontab(crontab: String) {
 
 
 fn remove(args: Vec<String>) {
-    if args.len() == 1 {
+    if args.len() == 2 {
         let exe_path = get_exe_path();
         if check_if_cronjob_exists(exe_path.clone()) {
             remove_all_crontabs(exe_path);
         }
 
-    } else if args.len() == 2{
+    } else if args.len() == 3{
         let timings = args[2].clone();
         let exe_path = get_exe_path();
 
@@ -166,7 +172,7 @@ fn add(args: Vec<String>) {
     if args.len() > 3 {
        panic!("Please surround the crontab in quotes: \"0 18 * * *\"");
     }
-    let exe_path = "~/Documents/Code/Projects/go-file-sorter/go-file-sorter";
+    let exe_path = get_exe_path();
 
     let timings = args[2].clone();
     let cronjob = format!("{} {}", timings, exe_path);
